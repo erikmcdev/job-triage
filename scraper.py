@@ -1,6 +1,5 @@
 from jobspy import scrape_jobs
 import config
-import pandas as pd
 
 
 def fetch_all_jobs() -> list[dict]:
@@ -10,7 +9,7 @@ def fetch_all_jobs() -> list[dict]:
     for query in config.SEARCH_QUERIES:
         try:
             df = scrape_jobs(
-                site_name=["linkedin"],
+                site_name=["indeed"],
                 search_term=query["term"],
                 location=query.get("location", "Barcelona"),
                 results_wanted=config.RESULTS_PER_QUERY,
@@ -18,10 +17,6 @@ def fetch_all_jobs() -> list[dict]:
                 country_indeed="Spain",
                 linkedin_fetch_description=True,
             )
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.width', None)
-            print(df)
 
             for _, row in df.iterrows():
                 job = {
