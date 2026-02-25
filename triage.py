@@ -9,7 +9,7 @@ import config
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-CV_SUMMARY_PATH = os.path.join(os.path.dirname(__file__), "cv-summary")
+CV_SUMMARY_PATH = os.getenv("CV_SUMMARY_PATH")
 
 
 def load_cv_summary() -> str:

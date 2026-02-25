@@ -3,3 +3,4 @@ __pycache__/
 .env
 seen_jobs.json
 pipeline.log
+resume-data/
