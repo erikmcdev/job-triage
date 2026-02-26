@@ -5,7 +5,7 @@ SEARCH_QUERIES = [
 ]
 
 RESULTS_PER_QUERY = 100
-HOURS_OLD = 72  # Solo ofertas de las últimas 24h
+HOURS_OLD = 24  # Solo ofertas de las últimas 24h
 
 # --- Hard filters ---
 EXCLUDE_TITLE_KEYWORDS = [
