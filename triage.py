@@ -29,7 +29,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         Description:
         {job['description'][:3000]}
 
-        CANDIDATE PROFILE:
+        CANDIDATE PROFILE in markdown:
         {cv_summary}
         CANDIDATE PROFILE END
 
