@@ -38,7 +38,8 @@ def notify_jobs(jobs: list[dict]):
         missing = ", ".join(job.get("ai_missing", [])) or "ninguna"
         msg = (
             f"*{job['title']}*\n"
-            f"🏢 {job['company']}\n"
+            f"🏢 {job['company']} ({job['company_industry']})\n"
+            f"💰 {job['min_salary']} - {job['max_salary']} {job['salary_currency']}\n"
             f"📍 {job['location']}\n"
             f"⭐ Match: {job['ai_score']}/10\n"
             f"💬 {job['ai_reason']}\n"

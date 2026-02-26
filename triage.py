@@ -19,6 +19,36 @@ def load_cv_summary() -> str:
 
 def evaluate_job(job: dict, cv_summary: str) -> dict | None:
     """Ask Claude to evaluate job-CV match. Returns parsed evaluation or None."""
+    system_prompt = """You are a helpful assistant that evaluates how well a job offer matches a candidate's profile.
+        You give a score from 1 to 10 and explain the reason.
+        You also list any important skills mentioned in the job offer that are missing from the candidate profile, this justifies why the score is not a 10.
+        Also include the matching skills in the reason, so the candidate knows what to highlight in their application.
+        
+        Criteria for scoring:
+            - Seniority of the role:
+                - Find the seniority level stated in the offer could be a role title (e.g. senior, lead, mid, junior) or in years of experience (e.g. 3+ years).
+                - Compare it with the candidate's experience level. If the offer is for a senior role but the candidate is mid-level, that would lower the score.
+                - If its years, and the candidate has an experience gap of more than 2 years from the offer, that would also lower the score.
+                - Sometimes seniority is not at offer level but skill-level, e.g. "looking for senior python developer but mid-level in other skills is ok".
+                    - In that case, evaluate the seniority for each skill and average it for the final score.
+            - Skills:
+                - Check the required skills in the offer and see if they are mentioned in the candidate profile.
+                - If they're not mentioned but you can find transferable skills or similar experience, that can mitigate the missing skill and make it a partial match in this aspect.
+                - Required skills vs nice-to-have: if the offer distinguishes between must-have and nice-to-have skills, weigh them accordingly. Missing a must-have skill is more detrimental than missing a nice-to-have.
+            - Type of company:
+                - If the candidate states a preference for a certain company type, or sector in they summary, take that into account.
+            - Expected salary:
+                - If the offer doesnt state a salary, try to infer it from the company, role, and location. And define a range of expected salary fot the offer.
+
+        Respond ONLY with a JSON object, no markdown, no backticks:
+        {
+        "company_industry": str,  # e.g. fintech, consultancy, e-commerce, ... 
+        "score": <1-10 integer>,
+        "reason": "<1-3 sentences explaining the score>",
+        "missing_skills": ["<skill1>", "<skill2>"],
+        "expected_salary": {"min": int, "max": int, "currency": str}  # inferred if not stated in the offer
+        }
+    """
     prompt = f"""Evaluate the match between this job offer and the candidate profile.
 
         JOB OFFER:
@@ -51,7 +81,14 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
             },
             json={
                 "model": config.CLAUDE_MODEL,
-                "max_tokens": 300,
+                "max_tokens": 800,
+                "system": [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ],
                 "messages": [{"role": "user", "content": prompt}],
             },
             timeout=30,
@@ -89,6 +126,10 @@ def triage_jobs(jobs: list[dict]) -> list[dict]:
         job["ai_score"] = evaluation.get("score", 0)
         job["ai_reason"] = evaluation.get("reason", "")
         job["ai_missing"] = evaluation.get("missing_skills", [])
+        job["company_industry"] = evaluation.get("company_industry", "Unknown")
+        job["min_salary"] = evaluation.get("expected_salary", {}).get("min", 0)
+        job["max_salary"] = evaluation.get("expected_salary", {}).get("max", 0)
+        job["salary_currency"] = evaluation.get("expected_salary", {}).get("currency", "EUR")
 
         if job["ai_score"] >= config.CLAUDE_SCORE_THRESHOLD:
             good_jobs.append(job)
