@@ -31,6 +31,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
 
         CANDIDATE PROFILE:
         {cv_summary}
+        CANDIDATE PROFILE END
 
         Respond ONLY with a JSON object, no markdown, no backticks:
         {{
