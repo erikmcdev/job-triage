@@ -63,12 +63,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         {cv_summary}
         CANDIDATE PROFILE END
 
-        Respond ONLY with a JSON object, no markdown, no backticks:
-        {{
-        "score": <1-10 integer>,
-        "reason": "<1-2 sentences explaining the score>",
-        "missing_skills": ["<skill1>", "<skill2>"]
-        }}"""
+        """
 
     try:
         sleep(0.8)
