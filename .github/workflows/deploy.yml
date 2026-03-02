@@ -33,5 +33,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/job-triage
+            git fetch origin && git reset --hard origin/main
             docker compose pull
             DOMAIN=${{ secrets.DOMAIN }} docker compose up -d
