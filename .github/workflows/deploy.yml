@@ -26,7 +26,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:latest
 
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
