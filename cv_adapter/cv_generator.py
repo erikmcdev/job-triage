@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import requests
@@ -133,7 +134,13 @@ def generate_cv(job: dict) -> bytes:
 
 
 def _html_to_pdf(html_content: str) -> bytes:
-    html_content = html_content.replace('src="profile.jpg"', f'src="file://{RESUME_DATA_DIR}/profile.jpg"')
+    # Embed profile image as base64 data URL
+    profile_path = os.path.join(RESUME_DATA_DIR, "profile.jpg")
+    if os.path.exists(profile_path):
+        with open(profile_path, "rb") as f:
+            profile_b64 = base64.b64encode(f.read()).decode()
+        html_content = html_content.replace('src="profile.jpg"', f'src="data:image/jpeg;base64,{profile_b64}"')
+
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
