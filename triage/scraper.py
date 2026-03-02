@@ -1,5 +1,5 @@
 from jobspy import scrape_jobs
-import config
+from . import config
 
 
 def fetch_all_jobs() -> list[dict]:
@@ -9,7 +9,7 @@ def fetch_all_jobs() -> list[dict]:
     for query in config.SEARCH_QUERIES:
         try:
             df = scrape_jobs(
-                site_name=["indeed"],
+                site_name=["linkedin"],
                 search_term=query["term"],
                 location=query.get("location", "Barcelona"),
                 results_wanted=config.RESULTS_PER_QUERY,

@@ -1,9 +1,9 @@
 import json
 import os
 import re
-import config
+from . import config
 
-SEEN_JOBS_PATH = os.path.join(os.path.dirname(__file__), "seen_jobs.json")
+SEEN_JOBS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "seen_jobs.json")
 
 
 def load_seen_jobs() -> set:

@@ -4,9 +4,9 @@ import time
 import requests
 from time import sleep
 from dotenv import load_dotenv
-import config
+from . import config
 
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 CV_SUMMARY_PATH = os.getenv("CV_SUMMARY_PATH")
@@ -23,7 +23,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         You give a score from 1 to 10 and explain the reason.
         You also list any important skills mentioned in the job offer that are missing from the candidate profile, this justifies why the score is not a 10.
         Also include the matching skills in the reason, so the candidate knows what to highlight in their application.
-        
+
         Criteria for scoring:
             - Seniority of the role:
                 - Find the seniority level stated in the offer could be a role title (e.g. senior, lead, mid, junior) or in years of experience (e.g. 3+ years).
@@ -42,7 +42,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
 
         Respond ONLY with a JSON object, no markdown, no backticks:
         {
-        "company_industry": str,  # e.g. fintech, consultancy, e-commerce, ... 
+        "company_industry": str,  # e.g. fintech, consultancy, e-commerce, ...
         "score": <1-10 integer>,
         "reason": "<1-3 sentences explaining the score>",
         "missing_skills": ["<skill1>", "<skill2>"],

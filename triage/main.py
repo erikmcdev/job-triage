@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """Job search pipeline: scrape → filter → triage → notify."""
 
-import sys
-import os
-
-# Ensure project root is in path
-sys.path.insert(0, os.path.dirname(__file__))
-
-from scraper import fetch_all_jobs
-from filters import apply_filters, load_seen_jobs, save_seen_jobs
-from triage import triage_jobs
-from notify import notify_jobs
+from .scraper import fetch_all_jobs
+from .filters import apply_filters, load_seen_jobs, save_seen_jobs
+from .triage import triage_jobs
+from .notify import notify_jobs
 
 
 def main():
