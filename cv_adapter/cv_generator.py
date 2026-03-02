@@ -133,8 +133,7 @@ def generate_cv(job: dict) -> bytes:
 
 
 def _html_to_pdf(html_content: str) -> bytes:
-    base_tag = f'<base href="file://{RESUME_DATA_DIR}/">'
-    html_content = html_content.replace("<head>", f"<head>\n  {base_tag}", 1)
+    html_content = html_content.replace('src="profile.jpg"', f'src="file://{RESUME_DATA_DIR}/profile.jpg"')
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
