@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.git/
+.env
+resume-data/
+seen_jobs.json
+pending_jobs.json
+test_output.*
+test_cv_local.py
+tests/
+.github/
+nginx/
+init-ssl.sh
+*.md

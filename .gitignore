@@ -4,3 +4,6 @@ __pycache__/
 seen_jobs.json
 pipeline.log
 resume-data/
+pending_jobs.json
+test_output.*
+test_cv_local.py

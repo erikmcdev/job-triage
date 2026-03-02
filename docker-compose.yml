@@ -1,0 +1,52 @@
+services:
+  cv-adapter:
+    image: ghcr.io/erikmcdev/job-triage:latest
+    command: uvicorn cv_adapter.api:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    expose:
+      - "8000"
+    env_file:
+      - /home/job-triage/.env
+    volumes:
+      - /home/job-triage/resume-data:/app/resume-data
+      - /home/job-triage/seen_jobs.json:/app/seen_jobs.json
+      - /home/job-triage/pending_jobs.json:/app/pending_jobs.json
+
+  triage:
+    image: ghcr.io/erikmcdev/job-triage:latest
+    command: python -m triage.main
+    profiles: ["cli"]
+    env_file:
+      - /home/job-triage/.env
+    volumes:
+      - /home/job-triage/resume-data:/app/resume-data
+      - /home/job-triage/seen_jobs.json:/app/seen_jobs.json
+      - /home/job-triage/pending_jobs.json:/app/pending_jobs.json
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/templates/default.conf:ro
+      - ./nginx/entrypoint.sh:/docker-entrypoint.sh:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+    environment:
+      - DOMAIN=${DOMAIN}
+    entrypoint: /docker-entrypoint.sh
+    depends_on:
+      - cv-adapter
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+
+volumes:
+  certbot-webroot:
+  certbot-certs:
