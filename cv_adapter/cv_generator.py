@@ -138,6 +138,7 @@ def _html_to_pdf(html_content: str) -> bytes:
         browser = p.chromium.launch()
         page = browser.new_page()
         page.set_content(html_content)
+        page.wait_for_load_state("networkidle")
         pdf = page.pdf(format="A4", print_background=True)
         browser.close()
     return pdf
