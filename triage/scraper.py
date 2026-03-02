@@ -9,11 +9,10 @@ def fetch_all_jobs() -> list[dict]:
     for query in config.SEARCH_QUERIES:
         try:
             df = scrape_jobs(
-                site_name=["linkedin"],
+                site_name=["indeed"],
                 search_term=query["term"],
                 location=query.get("location", "Barcelona"),
                 results_wanted=config.RESULTS_PER_QUERY,
-                hours_old=config.HOURS_OLD,
                 country_indeed="Spain",
                 linkedin_fetch_description=True,
             )
