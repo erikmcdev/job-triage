@@ -4,14 +4,14 @@ SEARCH_QUERIES = [
     {"term": "PHP developer", "location": "Barcelona"},
 ]
 
-RESULTS_PER_QUERY = 100
+RESULTS_PER_QUERY = 50
 HOURS_OLD = 24  # Solo ofertas de las últimas 24h
 
 # --- Hard filters ---
 EXCLUDE_TITLE_KEYWORDS = [
     "junior", "intern", "internship", "prácticas", "becario",
     "frontend", "front-end", "manager", "lead",
-    "mobile", "ios", "android", "data scientist", "machine learning", "consultora"
+    "mobile", "ios", "android", "data scientist", "machine learning", "consultora", "senior"
 ]
 
 BLACKLIST_COMPANIES = [
