@@ -8,29 +8,28 @@ if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
     exit 1
 fi
 
+# Use the same volume names that docker-compose creates
+WEBROOT_VOL="job-triage_certbot-webroot"
+CERTS_VOL="job-triage_certbot-certs"
+
 echo "==> Creating docker volumes..."
-docker volume create certbot-webroot 2>/dev/null || true
-docker volume create certbot-certs 2>/dev/null || true
+docker volume create "$WEBROOT_VOL" 2>/dev/null || true
+docker volume create "$CERTS_VOL" 2>/dev/null || true
 
 echo "==> Starting nginx (HTTP only) for ACME challenge..."
 docker run --rm -d --name nginx-init \
     -p 80:80 \
-    -v "$(pwd)/nginx/default.conf:/etc/nginx/templates/default.conf:ro" \
-    -v certbot-webroot:/var/www/certbot \
-    -e DOMAIN="$DOMAIN" \
-    nginx:alpine sh -c "
-        envsubst '\${DOMAIN}' < /etc/nginx/templates/default.conf \
-        | sed '/listen 443/,/^}/d' > /etc/nginx/conf.d/default.conf && \
-        nginx -g 'daemon off;'
-    "
+    -v "$(pwd)/nginx/init.conf:/etc/nginx/conf.d/default.conf:ro" \
+    -v "$WEBROOT_VOL":/var/www/certbot \
+    nginx:alpine
 
 echo "==> Waiting for nginx to start..."
 sleep 3
 
 echo "==> Requesting certificate from Let's Encrypt..."
 docker run --rm \
-    -v certbot-webroot:/var/www/certbot \
-    -v certbot-certs:/etc/letsencrypt \
+    -v "$WEBROOT_VOL":/var/www/certbot \
+    -v "$CERTS_VOL":/etc/letsencrypt \
     certbot/certbot certonly \
         --webroot \
         --webroot-path /var/www/certbot \
