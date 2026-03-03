@@ -10,4 +10,3 @@ RUN pip install --no-cache-dir -r requirements.txt \
 
 COPY triage/ ./triage/
 COPY cv_adapter/ ./cv_adapter/
-COPY tests/ ./tests/
