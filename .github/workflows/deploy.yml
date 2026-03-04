@@ -22,7 +22,7 @@ jobs:
       - name: Run tests
         run: |
           docker build -t test-image .
-          docker run --rm -v ${{ github.workspace }}/tests:/app/tests test-image sh -c "pip install pytest && pytest tests/"
+          docker run --rm -v ${{ github.workspace }}/tests:/app/tests test-image sh -c "pip install pytest httpx && pytest tests/"
 
       - name: Build and push
         uses: docker/build-push-action@v5
