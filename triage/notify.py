@@ -72,7 +72,9 @@ def notify_jobs(jobs: list[dict]):
         )
         reply_markup = {
             "inline_keyboard": [[
-                {"text": "📄 Generar CV", "callback_data": f"cv:{key}"}
+                {"text": "👍", "callback_data": f"up:{key}"},
+                {"text": "👎", "callback_data": f"dn:{key}"},
+                {"text": "📄 Generar CV", "callback_data": f"cv:{key}"},
             ]]
         }
         send_message(msg, reply_markup=reply_markup)
