@@ -3,14 +3,40 @@ Integration tests for CV generation with real PDF rendering.
 
 Tests that the PDF contains expected content: image, text, and fonts.
 This catches environment-specific issues like sandbox restrictions on file access.
+Claude API is mocked — we're testing Playwright + template + image embedding.
 """
 
 import json
 import os
-import tempfile
-from io import BytesIO
+from unittest.mock import patch
 
 import pytest
+
+
+MOCK_CLAUDE_CV_DATA = {
+    "font_scale": 1.0,
+    "about_me": "Experienced backend engineer. Passionate about clean architecture.",
+    "experience": [
+        {
+            "company": "Tech Startup — SaaS",
+            "role": "Senior Backend Engineer",
+            "period": "2020 — 2024",
+            "bullets": [
+                "Designed REST APIs serving 10k RPM.",
+                "Migrated legacy monolith to microservices.",
+                "Implemented CI/CD pipeline with Docker.",
+            ],
+            "tags": ["Python", "PostgreSQL", "Docker"],
+        }
+    ],
+    "education": [
+        {
+            "degree": "Computer Science — UPC",
+            "school": "Algorithms, OS, Networks",
+            "date": "2016 — 2020",
+        }
+    ],
+}
 
 
 @pytest.fixture()
@@ -20,7 +46,6 @@ def cv_data_dir(tmp_path):
     resume_dir.mkdir()
 
     # Create a minimal test profile image (1x1 JPEG)
-    # Minimal valid JPEG: FFD8 FFE0 ... FFD9
     minimal_jpeg = bytes([
         0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
         0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xDB, 0x00, 0x43,
@@ -73,14 +98,13 @@ def test_cv_pdf_generation_with_image(cv_data_dir):
     """
     Test that CV PDF generation works end-to-end with real image embedding.
 
-    This test catches environment-specific issues like:
-    - Sandbox restrictions on file:// URLs
-    - Missing fonts from Google Fonts
-    - Image encoding/embedding issues
-
-    Runs in GitHub Actions (Linux native) to catch WSL vs VPS differences.
+    Claude API is mocked with a fixed response. We're testing:
+    - Jinja2 template rendering
+    - Playwright PDF generation
+    - Profile image base64 embedding
+    - Environment-specific issues (sandbox, fonts, etc.)
     """
-    from cv_adapter.cv_generator import generate_cv
+    import cv_adapter.cv_generator as cv_gen
 
     mock_job = {
         "title": "Senior Backend Engineer",
@@ -95,33 +119,15 @@ def test_cv_pdf_generation_with_image(cv_data_dir):
         "description": "Looking for Python/PostgreSQL expert.",
     }
 
-    # Patch the paths to use our temp directory
-    import cv_adapter.cv_generator as cv_gen
-    original_cv_base = cv_gen.CV_BASE_PATH
-    original_personal = cv_gen.PERSONAL_INFO_PATH
-    original_resume_dir = cv_gen.RESUME_DATA_DIR
+    with (
+        patch.object(cv_gen, "CV_BASE_PATH", os.path.join(cv_data_dir, "cv-base.md")),
+        patch.object(cv_gen, "PERSONAL_INFO_PATH", os.path.join(cv_data_dir, "personal-info.json")),
+        patch.object(cv_gen, "RESUME_DATA_DIR", cv_data_dir),
+        patch.object(cv_gen, "_call_claude", return_value=MOCK_CLAUDE_CV_DATA),
+    ):
+        pdf_bytes = cv_gen.generate_cv(mock_job)
 
-    try:
-        cv_gen.CV_BASE_PATH = os.path.join(cv_data_dir, "cv-base.md")
-        cv_gen.PERSONAL_INFO_PATH = os.path.join(cv_data_dir, "personal-info.json")
-        cv_gen.RESUME_DATA_DIR = cv_data_dir
-
-        # Generate real PDF
-        pdf_bytes = generate_cv(mock_job)
-
-        # Verify it's a valid PDF
-        assert pdf_bytes.startswith(b"%PDF"), "Output is not a valid PDF"
-        assert len(pdf_bytes) > 5000, "PDF is suspiciously small (image embedding failed)"
-
-        # Verify PDF contains JPEG image data (embedded or as stream)
-        # The JPEG header (FFD8) indicates image was successfully embedded
-        assert b"\xff\xd8\xff" in pdf_bytes, "PDF does not contain embedded JPEG image"
-
-        # Verify PDF structure is complete
-        assert b"%%EOF" in pdf_bytes, "PDF is incomplete or corrupted"
-
-    finally:
-        # Restore original paths
-        cv_gen.CV_BASE_PATH = original_cv_base
-        cv_gen.PERSONAL_INFO_PATH = original_personal
-        cv_gen.RESUME_DATA_DIR = original_resume_dir
+    assert pdf_bytes.startswith(b"%PDF"), "Output is not a valid PDF"
+    assert len(pdf_bytes) > 5000, "PDF is suspiciously small (image embedding failed)"
+    assert b"\xff\xd8\xff" in pdf_bytes, "PDF does not contain embedded JPEG image"
+    assert b"%%EOF" in pdf_bytes, "PDF is incomplete or corrupted"
