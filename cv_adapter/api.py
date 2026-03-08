@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import re
 import requests
@@ -8,6 +9,9 @@ from fastapi import FastAPI, Request, HTTPException
 
 from .cv_generator import generate_cv
 from triage.feedback import save_feedback, build_feedback_entry, REASON_CODES
+
+logger = logging.getLogger("cv_adapter")
+logging.basicConfig(level=logging.INFO)
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
@@ -93,12 +97,15 @@ def _save_job_feedback(job: dict, feedback: str, reason: str | None = None):
 # --- Callback handlers ---
 
 async def _handle_thumbs_up(callback_id: str, chat_id: str, message_id: int, key: str):
+    logger.info("👍 handler: key=%s", key)
     job = await asyncio.to_thread(_get_job, key)
     if not job:
+        logger.warning("👍 job not found: key=%s", key)
         await asyncio.to_thread(_answer_callback, callback_id, "❌ Oferta no encontrada")
         return
 
     await asyncio.to_thread(_save_job_feedback, job, "positive")
+    logger.info("👍 feedback saved: key=%s title=%s", key, job.get("title"))
     await asyncio.to_thread(_answer_callback, callback_id, "👍 Guardado")
 
     # Leave only the CV button
@@ -112,6 +119,7 @@ async def _handle_thumbs_up(callback_id: str, chat_id: str, message_id: int, key
 
 
 async def _handle_thumbs_down(callback_id: str, chat_id: str, message_id: int, key: str):
+    logger.info("👎 handler: key=%s", key)
     await asyncio.to_thread(_answer_callback, callback_id, "Selecciona la razón:")
 
     reason_keyboard = {
@@ -133,8 +141,10 @@ async def _handle_thumbs_down(callback_id: str, chat_id: str, message_id: int, k
 
 
 async def _handle_down_reason(callback_id: str, chat_id: str, message_id: int, key: str, code: str):
+    logger.info("👎 reason handler: key=%s code=%s", key, code)
     job = await asyncio.to_thread(_get_job, key)
     if not job:
+        logger.warning("👎 reason: job not found key=%s", key)
         await asyncio.to_thread(_answer_callback, callback_id, "❌ Oferta no encontrada")
         return
 
@@ -207,6 +217,7 @@ async def webhook(request: Request):
             raise HTTPException(status_code=403, detail="Forbidden")
 
     data = await request.json()
+    logger.info("Webhook received: %s", json.dumps(data, ensure_ascii=False)[:500])
 
     # Handle callback queries (button presses)
     if "callback_query" in data:
@@ -215,17 +226,26 @@ async def webhook(request: Request):
         callback_data = callback.get("data", "")
         chat_id = str(callback["message"]["chat"]["id"])
         message_id = callback["message"]["message_id"]
+        logger.info("Callback: data=%s chat=%s msg=%s", callback_data, chat_id, message_id)
 
-        if callback_data.startswith("cv:"):
-            await _handle_cv_generation(callback_id, chat_id, message_id, callback_data[3:])
-        elif callback_data.startswith("up:"):
-            await _handle_thumbs_up(callback_id, chat_id, message_id, callback_data[3:])
-        elif callback_data.startswith("dn:"):
-            await _handle_thumbs_down(callback_id, chat_id, message_id, callback_data[3:])
-        elif callback_data.startswith("dr:"):
-            parts = callback_data.split(":")
-            if len(parts) == 3:
-                await _handle_down_reason(callback_id, chat_id, message_id, parts[1], parts[2])
+        try:
+            if callback_data.startswith("cv:"):
+                await _handle_cv_generation(callback_id, chat_id, message_id, callback_data[3:])
+            elif callback_data.startswith("up:"):
+                await _handle_thumbs_up(callback_id, chat_id, message_id, callback_data[3:])
+            elif callback_data.startswith("dn:"):
+                await _handle_thumbs_down(callback_id, chat_id, message_id, callback_data[3:])
+            elif callback_data.startswith("dr:"):
+                parts = callback_data.split(":")
+                if len(parts) == 3:
+                    await _handle_down_reason(callback_id, chat_id, message_id, parts[1], parts[2])
+                else:
+                    logger.warning("Unexpected dr: parts count: %d -> %s", len(parts), parts)
+            else:
+                logger.warning("Unknown callback_data: %s", callback_data)
+        except Exception:
+            logger.exception("Error handling callback %s", callback_data)
+            raise
 
         return {"ok": True}
 
