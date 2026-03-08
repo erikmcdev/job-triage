@@ -1,7 +1,9 @@
 # --- Search queries ---
 SEARCH_QUERIES = [
-    {"term": "python developer", "location": "Barcelona"},
-    {"term": "PHP developer", "location": "Barcelona"},
+    {"site": "indeed", "term": "python developer", "location": "Barcelona"},
+    {"site": "indeed", "term": "PHP developer", "location": "Barcelona"},
+    {"site": "linkedin", "term": "python developer", "location": "Barcelona"},
+    {"site": "linkedin", "term": "PHP developer", "location": "Barcelona"},
 ]
 
 RESULTS_PER_QUERY = 50
