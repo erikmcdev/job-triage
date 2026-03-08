@@ -193,17 +193,22 @@ async def _handle_cv_generation(callback_id: str, chat_id: str, message_id: int,
 
 async def _handle_force_reply(chat_id: str, text: str, reply_text: str):
     """Handle text reply to ForceReply (free-text reason for negative feedback)."""
+    logger.info("Force reply handler: user_text=%s reply_text=%s", text[:100], reply_text[:100])
     match = re.search(r"ref:([a-f0-9]{16})", reply_text)
     if not match:
+        logger.warning("Force reply: no ref: pattern found in reply_text")
         return
 
     key = match.group(1)
+    logger.info("Force reply: key=%s", key)
     job = await asyncio.to_thread(_get_job, key)
     if not job:
+        logger.warning("Force reply: job not found key=%s", key)
         await asyncio.to_thread(_send_message, chat_id, "❌ Oferta no encontrada.")
         return
 
     await asyncio.to_thread(_save_job_feedback, job, "negative", text)
+    logger.info("Force reply: feedback saved key=%s reason=%s", key, text)
     await asyncio.to_thread(_send_message, chat_id, f"👎 Guardado: {text}")
 
 
@@ -253,8 +258,13 @@ async def webhook(request: Request):
     message = data.get("message", {})
     if message.get("reply_to_message") and message.get("text"):
         reply_text = message["reply_to_message"].get("text", "")
+        logger.info("Reply message detected. reply_text=%s user_text=%s", reply_text[:100], message["text"][:100])
         if "ref:" in reply_text:
             chat_id = str(message["chat"]["id"])
             await _handle_force_reply(chat_id, message["text"], reply_text)
+        else:
+            logger.warning("Reply message did not contain 'ref:' — ignoring")
+    elif "message" in data:
+        logger.info("Non-reply message received — ignoring")
 
     return {"ok": True}
