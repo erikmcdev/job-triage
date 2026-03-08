@@ -94,6 +94,17 @@ def _save_job_feedback(job: dict, feedback: str, reason: str | None = None):
     save_feedback(entry)
 
 
+def _original_buttons(key: str) -> dict:
+    """Return the original inline keyboard for a job notification."""
+    return {
+        "inline_keyboard": [[
+            {"text": "👍", "callback_data": f"up:{key}"},
+            {"text": "👎", "callback_data": f"dn:{key}"},
+            {"text": "📄 Generar CV", "callback_data": f"cv:{key}"},
+        ]]
+    }
+
+
 # --- Callback handlers ---
 
 async def _handle_thumbs_up(callback_id: str, chat_id: str, message_id: int, key: str):
@@ -104,11 +115,16 @@ async def _handle_thumbs_up(callback_id: str, chat_id: str, message_id: int, key
         await asyncio.to_thread(_answer_callback, callback_id, "❌ Oferta no encontrada")
         return
 
-    await asyncio.to_thread(_save_job_feedback, job, "positive")
-    logger.info("👍 feedback saved: key=%s title=%s", key, job.get("title"))
+    try:
+        await asyncio.to_thread(_save_job_feedback, job, "positive")
+        logger.info("👍 feedback saved: key=%s title=%s", key, job.get("title"))
+    except Exception as e:
+        logger.exception("👍 failed to save feedback: key=%s", key)
+        await asyncio.to_thread(_answer_callback, callback_id, f"❌ Error guardando: {e}")
+        return
+
     await asyncio.to_thread(_answer_callback, callback_id, "👍 Guardado")
 
-    # Leave only the CV button
     new_markup = {
         "inline_keyboard": [[
             {"text": "✅ 👍", "callback_data": "noop"},
@@ -160,7 +176,15 @@ async def _handle_down_reason(callback_id: str, chat_id: str, message_id: int, k
         return
 
     reason_text = REASON_CODES.get(code, code)
-    await asyncio.to_thread(_save_job_feedback, job, "negative", reason_text)
+    try:
+        await asyncio.to_thread(_save_job_feedback, job, "negative", reason_text)
+        logger.info("👎 feedback saved: key=%s reason=%s", key, reason_text)
+    except Exception as e:
+        logger.exception("👎 failed to save feedback: key=%s", key)
+        await asyncio.to_thread(_answer_callback, callback_id, f"❌ Error guardando: {e}")
+        await asyncio.to_thread(_edit_reply_markup, chat_id, message_id, _original_buttons(key))
+        return
+
     await asyncio.to_thread(_answer_callback, callback_id, f"👎 Guardado: {reason_text}")
     await asyncio.to_thread(_edit_reply_markup, chat_id, message_id)
 
@@ -207,8 +231,14 @@ async def _handle_force_reply(chat_id: str, text: str, reply_text: str):
         await asyncio.to_thread(_send_message, chat_id, "❌ Oferta no encontrada.")
         return
 
-    await asyncio.to_thread(_save_job_feedback, job, "negative", text)
-    logger.info("Force reply: feedback saved key=%s reason=%s", key, text)
+    try:
+        await asyncio.to_thread(_save_job_feedback, job, "negative", text)
+        logger.info("Force reply: feedback saved key=%s reason=%s", key, text)
+    except Exception as e:
+        logger.exception("Force reply: failed to save feedback key=%s", key)
+        await asyncio.to_thread(_send_message, chat_id, f"❌ Error guardando feedback: {e}")
+        return
+
     await asyncio.to_thread(_send_message, chat_id, f"👎 Guardado: {text}")
 
 
