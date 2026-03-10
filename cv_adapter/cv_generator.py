@@ -13,7 +13,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 RESUME_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resume-data")
 CV_BASE_PATH = os.path.join(RESUME_DATA_DIR, "cv-base.md")
 PERSONAL_INFO_PATH = os.path.join(RESUME_DATA_DIR, "personal-info.json")
-TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.html")
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template-v3.html")
 
 SYSTEM_PROMPT = """You are an expert CV writer that tailors CVs to specific job offers.
 Given a job offer and a candidate's full CV data in markdown, generate a tailored CV as a JSON object.
@@ -50,6 +50,19 @@ Respond ONLY with a valid JSON object, no markdown, no backticks:
       "school": "<relevant subjects or subtitle, e.g. 'Algorithms, OS, Networks, C/C++'>",
       "date": "<period, e.g. '2020 — 2022 · 4 semesters completed'>"
     }
+  ],
+  "projects": [
+    {
+      "name": "<project name, e.g. 'Job Search Pipeline'>",
+      "repo": "<GitHub repo URL without https://, e.g. 'github.com/erikmcdev/job-triage'>",
+      "period": "<period, e.g. 'Feb 2025 — Present'>",
+      "bullets": [
+        "<what the project does and why, concise and outcome-oriented>",
+        "<key technical highlight relevant to the job offer>",
+        "<...>"
+      ],
+      "tags": ["<tech actually used in this project, not invented>", "..."]
+    }
   ]
 }
 
@@ -63,7 +76,8 @@ Page-fit rules (the CV MUST fit in a single A4 page):
 Section rules — strict boundaries:
 - "experience": ONLY paid professional employment (companies where the candidate was hired). Never include personal projects, side projects, or open source work here.
 - "education": ONLY formal academic degrees and university programs. Never include certifications, courses, bootcamps, or online training here.
-- Certifications, courses, and personal projects are handled separately and must NOT appear in either section.
+- "projects": Personal projects from the "Personal Projects" section of the CV data. Pick only 1 project (the most relevant to the job offer). Use exactly 2 bullets, max 20 words each.
+- Certifications and courses are handled separately and must NOT appear in any of the above sections.
 
 Rules for experience bullets:
 - Exactly 3 bullets per experience entry — never more.

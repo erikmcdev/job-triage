@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV — {{ personal.name }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:wght@600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    :root {
+      --sidebar-bg: #1a1a1a;
+      --sidebar-text: #e8e6e3;
+      --sidebar-muted: #9a9590;
+      --sidebar-accent: #7a9bb5;
+      --sidebar-divider: rgba(255, 255, 255, 0.08);
+      --main-bg: #ffffff;
+      --main-text: #2d2d2d;
+      --main-muted: #6b6b6b;
+      --main-heading: #1a1a1a;
+      --main-accent: #7a9bb5;
+      --main-border: #e5e2dd;
+      --tag-bg: rgba(122, 155, 181, 0.1);
+      --tag-border: rgba(122, 155, 181, 0.25);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    html { font-size: calc(13.5px * {{ font_scale | default(1.0) }}); }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f0eeeb;
+      color: var(--main-text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: 72mm 1fr;
+      background: var(--main-bg);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .sidebar__photo-wrapper {
+      width: 100px; height: 100px;
+      margin: 0 auto 4px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2.5px solid var(--sidebar-accent);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    .sidebar__photo-wrapper img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    .sidebar__name {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.35rem; font-weight: 700;
+      text-align: center; letter-spacing: 0.01em; line-height: 1.25;
+    }
+
+    .sidebar__title {
+      font-size: 0.72rem; font-weight: 500;
+      text-align: center; color: var(--sidebar-accent);
+      text-transform: uppercase; letter-spacing: 0.12em; margin-top: -2px;
+    }
+
+    .sidebar__divider {
+      border: none;
+      border-top: 1px solid var(--sidebar-divider);
+      margin: 2px 0;
+    }
+
+    .sidebar__section-title {
+      font-size: 0.65rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--sidebar-accent); margin-bottom: 10px;
+    }
+
+    .sidebar__contact-list {
+      list-style: none; display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .sidebar__contact-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.78rem; color: var(--sidebar-text); line-height: 1.4;
+    }
+
+    .sidebar__contact-icon {
+      flex-shrink: 0; width: 16px; height: 16px;
+      margin-top: 1px; fill: var(--sidebar-accent); opacity: 0.85;
+    }
+
+    .sidebar__contact-item a {
+      color: var(--sidebar-text); text-decoration: none;
+      border-bottom: 1px solid transparent; transition: border-color 0.2s;
+    }
+
+    .sidebar__contact-item a:hover { border-bottom-color: var(--sidebar-accent); }
+
+    .sidebar__lang-list {
+      list-style: none; display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .sidebar__lang-item {
+      display: flex; justify-content: space-between;
+      align-items: center; font-size: 0.78rem;
+    }
+
+    .sidebar__lang-level { font-size: 0.68rem; color: var(--sidebar-muted); font-style: italic; }
+
+    .sidebar__certifications-list {
+      list-style: none; display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .sidebar__cert-item { font-size: 0.75rem; line-height: 1.35; }
+    .sidebar__cert-year { font-size: 0.65rem; color: var(--sidebar-muted); }
+
+    /* MAIN */
+    .main {
+      padding: 28px 28px 28px 24px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .section__title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--main-heading);
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--main-accent);
+      margin-bottom: 12px; letter-spacing: 0.01em;
+    }
+
+    .summary__text { font-size: 0.82rem; color: var(--main-text); line-height: 1.6; }
+
+    /* EXPERIENCE */
+    .experience__list { display: flex; flex-direction: column; gap: 16px; }
+
+    .experience__item { position: relative; padding-left: 14px; }
+
+    .experience__item::before {
+      content: ''; position: absolute;
+      left: 0; top: 6px; width: 5px; height: 5px;
+      border-radius: 50%; background: var(--main-accent);
+    }
+
+    .experience__header {
+      display: flex; justify-content: space-between;
+      align-items: baseline; flex-wrap: wrap; gap: 4px; margin-bottom: 2px;
+    }
+
+    .experience__role { font-size: 0.88rem; font-weight: 600; color: var(--main-heading); }
+    .experience__date { font-size: 0.72rem; color: var(--main-muted); font-style: italic; white-space: nowrap; }
+    .experience__company { font-size: 0.78rem; color: var(--main-accent); font-weight: 500; margin-bottom: 5px; }
+
+    .experience__bullets { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+
+    .experience__bullet {
+      font-size: 0.78rem; color: var(--main-text);
+      line-height: 1.5; padding-left: 12px; position: relative;
+    }
+
+    .experience__bullet::before {
+      content: '›'; position: absolute; left: 0;
+      color: var(--main-accent); font-weight: 700;
+    }
+
+    .experience__tags { display: flex; flex-wrap: wrap; margin-top: 5px; }
+
+    .experience__tag {
+      display: inline-block;
+      font-size: 0.62rem; padding: 2px 7px; border-radius: 2px;
+      background: var(--tag-bg); border: 1px solid var(--tag-border);
+      color: var(--main-muted); font-weight: 500;
+      margin: 0 4px 4px 0;
+    }
+
+    /* SKILLS — LINEAR TEXT */
+    .skills__list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .skills__line {
+      font-size: 0.78rem;
+      color: var(--main-text);
+      line-height: 1.5;
+    }
+
+    .skills__label {
+      font-weight: 600;
+      color: var(--main-heading);
+    }
+
+    /* EDUCATION */
+    .education__list { display: flex; flex-direction: column; gap: 10px; }
+
+    .education__item { padding-left: 14px; position: relative; }
+
+    .education__item::before {
+      content: ''; position: absolute;
+      left: 0; top: 6px; width: 5px; height: 5px;
+      border-radius: 50%; background: var(--main-accent);
+    }
+
+    .education__degree { font-size: 0.85rem; font-weight: 600; color: var(--main-heading); }
+    .education__school { font-size: 0.78rem; color: var(--main-accent); font-weight: 500; }
+    .education__date { font-size: 0.72rem; color: var(--main-muted); font-style: italic; }
+
+    @media print {
+      html { font-size: calc(13px * {{ font_scale | default(1.0) }}); }
+      body { background: none; }
+      .page { margin: 0; box-shadow: none; width: 210mm; }
+      .sidebar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .experience__item, .education__item { break-inside: avoid; }
+      .section__title { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar__photo-wrapper">
+        <img src="profile.jpg" alt="{{ personal.name }}">
+      </div>
+
+      <div>
+        <h1 class="sidebar__name">{{ personal.name }}</h1>
+        <p class="sidebar__title">Backend Software Engineer</p>
+      </div>
+
+      <hr class="sidebar__divider">
+
+      <div>
+        <h2 class="sidebar__section-title">Contact</h2>
+        <ul class="sidebar__contact-list">
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <a href="mailto:{{ personal.email }}">{{ personal.email }}</a>
+          </li>
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.07 21 3 13.93 3 3c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.1.31.03.66-.25 1.02l-2.2 2.2z"/></svg>
+            <span>{{ personal.phone }}</span>
+          </li>
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+            <span>{{ personal.location }}</span>
+          </li>
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14m-.5 15.5v-5.3a3.26 3.26 0 00-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 011.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 001.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 00-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+            <a href="https://{{ personal.linkedin }}">{{ personal.linkedin }}</a>
+          </li>
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+            <a href="https://{{ personal.web }}">{{ personal.web }}</a>
+          </li>
+          {% if personal.github %}
+          <li class="sidebar__contact-item">
+            <svg class="sidebar__contact-icon" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+            <a href="https://{{ personal.github }}">{{ personal.github }}</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <hr class="sidebar__divider">
+
+      <div>
+        <h2 class="sidebar__section-title">Languages</h2>
+        <ul class="sidebar__lang-list">
+          <li class="sidebar__lang-item">
+            <span>Spanish / Catalan</span>
+            <span class="sidebar__lang-level">Native</span>
+          </li>
+          <li class="sidebar__lang-item">
+            <span>English</span>
+            <span class="sidebar__lang-level">C1 · Professional</span>
+          </li>
+          <li class="sidebar__lang-item">
+            <span>French</span>
+            <span class="sidebar__lang-level">Basic</span>
+          </li>
+        </ul>
+      </div>
+
+      <hr class="sidebar__divider">
+
+      <div>
+        <h2 class="sidebar__section-title">Certifications</h2>
+        <ul class="sidebar__certifications-list">
+          <li class="sidebar__cert-item">
+            Python &amp; Algorithms for AI — Samsung Innovation Campus
+            <div class="sidebar__cert-year">2023 · EOI · 110h</div>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- SUMMARY -->
+      <section>
+        <h2 class="section__title">Professional Profile</h2>
+        <p class="summary__text">{{ about_me }}</p>
+      </section>
+
+      <!-- EXPERIENCE -->
+      <section>
+        <h2 class="section__title">Professional Experience</h2>
+        <div class="experience__list">
+          {% for exp in experience %}
+          <div class="experience__item">
+            <div class="experience__header">
+              <span class="experience__role">{{ exp.role }}</span>
+              <span class="experience__date">{{ exp.period }}</span>
+            </div>
+            <div class="experience__company">{{ exp.company }}</div>
+            <ul class="experience__bullets">
+              {% for bullet in exp.bullets %}
+              <li class="experience__bullet">{{ bullet }}</li>
+              {% endfor %}
+            </ul>
+            {% if exp.tags %}
+            <div class="experience__tags">
+              {% for tag in exp.tags %}
+              <span class="experience__tag">{{ tag }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- SKILLS — static linear text -->
+      <section>
+        <h2 class="section__title">Technical Skills</h2>
+        <div class="skills__list">
+          <div class="skills__line"><span class="skills__label">Languages:</span> Python, PHP, JS/TypeScript, Java, C/C++</div>
+          <div class="skills__line"><span class="skills__label">Frameworks &amp; APIs:</span> Symfony, Django, FastAPI/Flask, React, REST APIs</div>
+          <div class="skills__line"><span class="skills__label">Databases:</span> PostgreSQL, MySQL, MongoDB</div>
+          <div class="skills__line"><span class="skills__label">Infrastructure:</span> Docker, RabbitMQ, Jenkins CI/CD, GCP, Github CI/CD, Kubernetes</div>
+          <div class="skills__line"><span class="skills__label">Methodologies:</span> DDD, TDD, CQRS, Hexagonal Architecture, SCRUM/Agile</div>
+        </div>
+      </section>
+
+      <!-- EDUCATION -->
+      <section>
+        <h2 class="section__title">Education</h2>
+        <div class="education__list">
+          {% for edu in education %}
+          <div class="education__item">
+            <div class="education__degree">{{ edu.degree }}</div>
+            <div class="education__school">{{ edu.school }}</div>
+            <div class="education__date">{{ edu.date }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- PERSONAL PROJECTS -->
+      {% if projects %}
+      <section>
+        <h2 class="section__title">Personal Projects</h2>
+        <div class="experience__list">
+          {% for proj in projects %}
+          <div class="experience__item">
+            <div class="experience__header">
+              <span class="experience__role">{{ proj.name }}</span>
+              <span class="experience__date">{{ proj.period }}</span>
+            </div>
+            {% if proj.repo %}
+            <div class="experience__company"><a href="https://{{ proj.repo }}" style="color: inherit; text-decoration: none;">{{ proj.repo }}</a></div>
+            {% endif %}
+            <ul class="experience__bullets">
+              {% for bullet in proj.bullets %}
+              <li class="experience__bullet">{{ bullet }}</li>
+              {% endfor %}
+            </ul>
+            {% if proj.tags %}
+            <div class="experience__tags">
+              {% for tag in proj.tags %}
+              <span class="experience__tag">{{ tag }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </main>
+  </div>
+</body>
+</html>
