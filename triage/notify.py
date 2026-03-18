@@ -60,6 +60,7 @@ def notify_jobs(jobs: list[dict]):
         pending[key] = job
 
         missing = ", ".join(job.get("ai_missing", [])) or "ninguna"
+        dealbreakers = ", ".join(job.get("ai_dealbreakers", []))
         msg = (
             f"*{job['title']}*\n"
             f"🏢 {job['company']} ({job['company_industry']})\n"
@@ -68,7 +69,8 @@ def notify_jobs(jobs: list[dict]):
             f"⭐ Match: {job['ai_score']}/10\n"
             f"💬 {job['ai_reason']}\n"
             f"⚠️ Missing: {missing}\n"
-            f"🔗 [Ver oferta]({job['job_url']})"
+            + (f"🚫 Dealbreakers: {dealbreakers}\n" if dealbreakers else "")
+            + f"🔗 [Ver oferta]({job['job_url']})"
         )
         reply_markup = {
             "inline_keyboard": [[
