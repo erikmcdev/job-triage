@@ -4,6 +4,9 @@ import time
 import requests
 from time import sleep
 from dotenv import load_dotenv
+
+from model import Job, TriageResult
+from store import JobRepository
 from . import config
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
@@ -17,7 +20,7 @@ def load_cv_summary() -> str:
         return f.read()
 
 
-def evaluate_job(job: dict, cv_summary: str) -> dict | None:
+def evaluate_job(job: Job, cv_summary: str) -> dict | None:
     """Ask Claude to evaluate job-CV match. Returns parsed evaluation or None."""
     system_prompt = """You are a strict assistant that evaluates how well a job offer matches a candidate's profile.
         You give a score from 1 to 10 and explain the reason.
@@ -70,7 +73,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
 
         Respond ONLY with a JSON object, no markdown, no backticks:
         {
-        "company_industry": str,  # e.g. fintech, consultancy, e-commerce, ...
+        "company_industry": str,  // e.g. fintech, consultancy, e-commerce, ...
         "score": <1-10 integer>,
         "reason": "<1-3 sentences: which skills match, which dealbreaker/important skills are missing, and why the score is what it is>",
         "missing_skills": ["<skill1>", "<skill2>"],
@@ -81,12 +84,12 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
     prompt = f"""Evaluate the match between this job offer and the candidate profile.
 
         JOB OFFER:
-        Title: {job['title']}
-        Company: {job['company']}
-        Location: {job['location']}
-        Remote: {job['is_remote']}
+        Title: {job.title}
+        Company: {job.company}
+        Location: {job.location}
+        Remote: {job.is_remote}
         Description:
-        {job['description'][:3000]}
+        {job.description[:3000]}
 
         CANDIDATE PROFILE in markdown:
         {cv_summary}
@@ -122,8 +125,7 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
             msg = f"Claude API error {response.status_code}: {response.text[:200]}"
             print(f"  {msg}")
             raise RuntimeError(msg)
-        print(response.status_code)
-        print(response.text)
+
         text = response.json()["content"][0]["text"].strip()
         text = text.replace("```json", "").replace("```", "").strip()
         return json.loads(text)
@@ -137,34 +139,43 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         raise RuntimeError(msg)
 
 
-def triage_jobs(jobs: list[dict]) -> list[dict]:
+def triage_jobs(
+    jobs: list[Job],
+    keyword_scores: dict[str, int],
+    repo: JobRepository,
+) -> list[Job]:
     """Evaluate all jobs with Claude and return those above threshold."""
     cv_summary = load_cv_summary()
     good_jobs = []
 
     for i, job in enumerate(jobs):
-        print(f"  Triaging [{i+1}/{len(jobs)}]: {job['title']} @ {job['company']}")
+        print(f"  Triaging [{i+1}/{len(jobs)}]: {job.title} @ {job.company}")
 
         evaluation = evaluate_job(job, cv_summary)
         if not evaluation:
             continue
 
-        job["ai_score"] = evaluation.get("score", 0)
-        job["ai_reason"] = evaluation.get("reason", "")
-        job["ai_missing"] = evaluation.get("missing_skills", [])
-        job["ai_dealbreakers"] = evaluation.get("dealbreaker_gaps", [])
-        job["company_industry"] = evaluation.get("company_industry", "Unknown")
-        job["min_salary"] = evaluation.get("expected_salary", {}).get("min", 0)
-        job["max_salary"] = evaluation.get("expected_salary", {}).get("max", 0)
-        job["salary_currency"] = evaluation.get("expected_salary", {}).get("currency", "EUR")
+        triage = TriageResult(
+            score=evaluation.get("score", 0),
+            reason=evaluation.get("reason", ""),
+            missing_skills=evaluation.get("missing_skills", []),
+            dealbreaker_gaps=evaluation.get("dealbreaker_gaps", []),
+            company_industry=evaluation.get("company_industry", "Unknown"),
+            keyword_score=keyword_scores.get(job.job_url, 0),
+            salary_min=evaluation.get("expected_salary", {}).get("min", 0),
+            salary_max=evaluation.get("expected_salary", {}).get("max", 0),
+            salary_currency=evaluation.get("expected_salary", {}).get("currency", "EUR"),
+        )
 
-        if job["ai_score"] >= config.CLAUDE_SCORE_THRESHOLD:
+        job.triage = triage
+        repo.update_triage(job.id, triage)
+
+        if triage.score >= config.CLAUDE_SCORE_THRESHOLD:
             good_jobs.append(job)
-            print(f"    ✅ Score: {job['ai_score']}/10")
+            print(f"    ✅ Score: {triage.score}/10")
         else:
-            print(f"    ❌ Score: {job['ai_score']}/10")
+            print(f"    ❌ Score: {triage.score}/10")
 
-        # Rate limit: ~3 requests per second
         time.sleep(0.4)
 
     print(f"  Triaje: {len(jobs)} → {len(good_jobs)} (>={config.CLAUDE_SCORE_THRESHOLD}/10)")
