@@ -119,8 +119,9 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         )
 
         if response.status_code != 200:
-            print(f"  Claude API error {response.status_code}: {response.text[:200]}")
-            return None
+            msg = f"Claude API error {response.status_code}: {response.text[:200]}"
+            print(f"  {msg}")
+            raise RuntimeError(msg)
         print(response.status_code)
         print(response.text)
         text = response.json()["content"][0]["text"].strip()
@@ -131,8 +132,9 @@ def evaluate_job(job: dict, cv_summary: str) -> dict | None:
         print(f"  Error parsing Claude response: {e}")
         return None
     except requests.RequestException as e:
-        print(f"  Claude request error: {e}")
-        return None
+        msg = f"Claude request error: {e}"
+        print(f"  {msg}")
+        raise RuntimeError(msg)
 
 
 def triage_jobs(jobs: list[dict]) -> list[dict]:
