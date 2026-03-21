@@ -96,16 +96,16 @@ def _load_personal_info() -> dict:
         return json.load(f)
 
 
-def _call_claude(job: dict, cv_base: str) -> dict:
+def _call_claude(job, cv_base: str) -> dict:
     prompt = f"""Generate a tailored CV for the following job offer:
 
 JOB OFFER:
-Title: {job['title']}
-Company: {job['company']}
-Location: {job['location']}
-Remote: {job.get('is_remote', False)}
+Title: {job.title}
+Company: {job.company}
+Location: {job.location}
+Remote: {job.is_remote}
 Description:
-{job.get('description', '')[:4000]}
+{job.description[:4000]}
 
 CANDIDATE FULL CV DATA (markdown):
 {cv_base}"""
@@ -134,7 +134,7 @@ CANDIDATE FULL CV DATA (markdown):
     return json.loads(text)
 
 
-def generate_cv(job: dict) -> bytes:
+def generate_cv(job) -> bytes:
     """Generate a tailored PDF CV for the given job offer."""
     cv_base = _load_cv_base()
     cv_data = _call_claude(job, cv_base)

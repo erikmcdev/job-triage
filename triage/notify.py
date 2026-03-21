@@ -1,31 +1,14 @@
-import hashlib
-import json
 import os
 import requests
 from dotenv import load_dotenv
+
+from model import Job
+from store import JobRepository
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
-PENDING_JOBS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pending_jobs.json")
-
-
-def _job_key(job: dict) -> str:
-    return hashlib.md5(job["job_url"].encode()).hexdigest()[:16]
-
-
-def _load_pending() -> dict:
-    if os.path.exists(PENDING_JOBS_PATH):
-        with open(PENDING_JOBS_PATH) as f:
-            return json.load(f)
-    return {}
-
-
-def _save_pending(data: dict):
-    with open(PENDING_JOBS_PATH, "w") as f:
-        json.dump(data, f)
 
 
 def send_message(text: str, reply_markup=None):
@@ -45,41 +28,45 @@ def send_message(text: str, reply_markup=None):
         print(f"  Telegram error: {e}")
 
 
-def notify_jobs(jobs: list[dict]):
-    """Send a Telegram notification for each good job, with a 'Generar CV' button."""
+def notify_jobs(jobs: list[Job], repo: JobRepository):
+    """Send a Telegram notification for each good job."""
     if not jobs:
         send_message("🔍 Hoy no hay ofertas nuevas que pasen el filtro.")
         return
 
     send_message(f"🎯 *{len(jobs)} ofertas nuevas encontradas:*")
 
-    pending = _load_pending()
-
     for job in jobs:
-        key = _job_key(job)
-        pending[key] = job
+        triage = job.triage
+        missing = ", ".join(triage.missing_skills) if triage else "?"
+        dealbreakers = ", ".join(triage.dealbreaker_gaps) if triage else ""
+        score = triage.score if triage else "?"
+        reason = triage.reason if triage else ""
+        salary_min = triage.salary_min if triage else 0
+        salary_max = triage.salary_max if triage else 0
+        currency = triage.salary_currency if triage else "EUR"
+        industry = triage.company_industry if triage else "?"
 
-        missing = ", ".join(job.get("ai_missing", [])) or "ninguna"
-        dealbreakers = ", ".join(job.get("ai_dealbreakers", []))
         msg = (
-            f"*{job['title']}*\n"
-            f"🏢 {job['company']} ({job['company_industry']})\n"
-            f"💰 {job['min_salary']} - {job['max_salary']} {job['salary_currency']}\n"
-            f"📍 {job['location']}\n"
-            f"⭐ Match: {job['ai_score']}/10\n"
-            f"💬 {job['ai_reason']}\n"
-            f"⚠️ Missing: {missing}\n"
+            f"*{job.title}*\n"
+            f"🏢 {job.company} ({industry})\n"
+            f"💰 {salary_min} - {salary_max} {currency}\n"
+            f"📍 {job.location}\n"
+            f"⭐ Match: {score}/10\n"
+            f"💬 {reason}\n"
+            f"⚠️ Missing: {missing or 'ninguna'}\n"
             + (f"🚫 Dealbreakers: {dealbreakers}\n" if dealbreakers else "")
-            + f"🔗 [Ver oferta]({job['job_url']})"
+            + f"🔗 [Ver oferta]({job.job_url})"
         )
         reply_markup = {
             "inline_keyboard": [[
-                {"text": "👍", "callback_data": f"up:{key}"},
-                {"text": "👎", "callback_data": f"dn:{key}"},
-                {"text": "📄 Generar CV", "callback_data": f"cv:{key}"},
+                {"text": "👍", "callback_data": f"up:{job.id}"},
+                {"text": "👎", "callback_data": f"dn:{job.id}"},
+                {"text": "📄 Generar CV", "callback_data": f"cv:{job.id}"},
             ]]
         }
         send_message(msg, reply_markup=reply_markup)
 
-    _save_pending(pending)
+        repo.update_status(job.id, "notified")
+
     print(f"  {len(jobs)} notificaciones enviadas")

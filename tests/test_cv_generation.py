@@ -12,6 +12,8 @@ from unittest.mock import patch
 
 import pytest
 
+from model import Job
+
 
 MOCK_CLAUDE_CV_DATA = {
     "font_scale": 1.0,
@@ -106,18 +108,15 @@ def test_cv_pdf_generation_with_image(cv_data_dir):
     """
     import cv_adapter.cv_generator as cv_gen
 
-    mock_job = {
-        "title": "Senior Backend Engineer",
-        "company": "Tech Startup",
-        "location": "Remote",
-        "is_remote": True,
-        "job_url": "https://example.com/job/1",
-        "company_industry": "SaaS",
-        "min_salary": 80000,
-        "max_salary": 120000,
-        "salary_currency": "USD",
-        "description": "Looking for Python/PostgreSQL expert.",
-    }
+    mock_job = Job(
+        title="Senior Backend Engineer",
+        company="Tech Startup",
+        location="Remote",
+        is_remote=True,
+        job_url="https://example.com/job/1",
+        description="Looking for Python/PostgreSQL expert.",
+        site="linkedin",
+    )
 
     with (
         patch.object(cv_gen, "CV_BASE_PATH", os.path.join(cv_data_dir, "cv-base.md")),

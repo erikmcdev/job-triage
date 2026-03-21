@@ -12,9 +12,7 @@ services:
       - .env
     volumes:
       - ./resume-data:/app/resume-data
-      - ./seen_jobs.json:/app/seen_jobs.json
-      - ./pending_jobs.json:/app/pending_jobs.json
-      - ./triage_feedback.json:/app/triage_feedback.json
+      - ./jobs.db:/app/jobs.db
 
   triage:
     build:
@@ -27,9 +25,7 @@ services:
       - .env
     volumes:
       - ./resume-data:/app/resume-data
-      - ./seen_jobs.json:/app/seen_jobs.json
-      - ./pending_jobs.json:/app/pending_jobs.json
-      - ./pending_triage.json:/app/pending_triage.json
+      - ./jobs.db:/app/jobs.db
 
   nginx:
     image: nginx:alpine
