@@ -29,6 +29,7 @@ services:
       - ./resume-data:/app/resume-data
       - ./seen_jobs.json:/app/seen_jobs.json
       - ./pending_jobs.json:/app/pending_jobs.json
+      - ./pending_triage.json:/app/pending_triage.json
 
   nginx:
     image: nginx:alpine
