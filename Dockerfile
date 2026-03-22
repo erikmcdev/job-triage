@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && playwright install-deps chromium
 
 COPY model/ ./model/
+COPY ports/ ./ports/
 COPY store/ ./store/
 COPY triage/ ./triage/
 COPY cv_adapter/ ./cv_adapter/

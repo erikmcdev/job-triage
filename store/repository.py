@@ -4,12 +4,13 @@ import sqlite3
 from datetime import datetime
 
 from model import Job, TriageResult, Feedback
+from ports import JobRepository
 
 _BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 _DEFAULT_DB_PATH = os.path.join(_BASE_DIR, "jobs.db")
 
 
-class JobRepository:
+class SqliteJobRepository(JobRepository):
     def __init__(self, db_path: str | None = None):
         self._db_path = db_path or os.getenv("DB_PATH", _DEFAULT_DB_PATH)
         self._conn = sqlite3.connect(self._db_path)

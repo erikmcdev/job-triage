@@ -6,7 +6,7 @@ from time import sleep
 from dotenv import load_dotenv
 
 from model import Job, TriageResult
-from store import JobRepository
+from ports import JobRepository
 from . import config
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))

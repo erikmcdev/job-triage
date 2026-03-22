@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 
 from model import Job
-from store import JobRepository
+from ports import JobRepository
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 

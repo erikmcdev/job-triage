@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Job search pipeline: scrape → filter → triage → notify."""
 
-from store import JobRepository
+from store import SqliteJobRepository
 from .scraper import fetch_all_jobs
 from .filters import apply_filters
 from .triage import triage_jobs
@@ -17,7 +17,7 @@ def main():
     to_triage = []
 
     try:
-        repo = JobRepository()
+        repo = SqliteJobRepository()
         # 1. Scrape
         print("\n📡 Fetching jobs...")
         jobs = fetch_all_jobs()

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
 
 from model import Job, Feedback
-from store import JobRepository
+from store import SqliteJobRepository
 from .cv_generator import generate_cv
 
 logger = logging.getLogger("cv_adapter")
@@ -31,8 +31,8 @@ REASON_CODES = {
 app = FastAPI()
 
 
-def _get_repo() -> JobRepository:
-    return JobRepository()
+def _get_repo() -> SqliteJobRepository:
+    return SqliteJobRepository()
 
 
 def _answer_callback(callback_id: str, text: str = ""):

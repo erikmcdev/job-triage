@@ -1,3 +1,3 @@
-from .repository import JobRepository
+from .repository import SqliteJobRepository
 
-__all__ = ["JobRepository"]
+__all__ = ["SqliteJobRepository"]

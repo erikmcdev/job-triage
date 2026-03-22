@@ -1,6 +1,6 @@
 import re
 from model import Job
-from store import JobRepository
+from ports import JobRepository
 from . import config
 
 

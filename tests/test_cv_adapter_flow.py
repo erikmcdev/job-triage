@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from model import Job, TriageResult, Feedback
-from store import JobRepository
+from store import SqliteJobRepository
 
 
 # --- Fixtures ---
@@ -91,7 +91,7 @@ MOCK_PERSONAL_INFO = {
 def db_with_job(tmp_path):
     """Create a temp DB with our mock job."""
     db_path = str(tmp_path / "test_jobs.db")
-    repo = JobRepository(db_path)
+    repo = SqliteJobRepository(db_path)
     repo.save(MOCK_JOB)
     if MOCK_JOB.triage:
         repo.update_triage(MOCK_JOB.id, MOCK_JOB.triage)
@@ -136,7 +136,7 @@ def client(db_with_job, personal_info_file, cv_base_file):
         return mock_telegram_resp
 
     with (
-        patch("cv_adapter.api._get_repo", lambda: JobRepository(db_path)),
+        patch("cv_adapter.api._get_repo", lambda: SqliteJobRepository(db_path)),
         patch("cv_adapter.api.TELEGRAM_BOT_TOKEN", "fake-token"),
         patch("cv_adapter.api.TELEGRAM_SECRET_TOKEN", "test-secret"),
         patch("cv_adapter.cv_generator.CV_BASE_PATH", cv_base_file),
@@ -303,7 +303,7 @@ def feedback_client(db_with_job):
     mock_telegram_resp.json.return_value = {"ok": True}
 
     with (
-        patch("cv_adapter.api._get_repo", lambda: JobRepository(db_path)),
+        patch("cv_adapter.api._get_repo", lambda: SqliteJobRepository(db_path)),
         patch("cv_adapter.api.TELEGRAM_BOT_TOKEN", "fake-token"),
         patch("cv_adapter.api.TELEGRAM_SECRET_TOKEN", ""),
         patch("requests.post", return_value=mock_telegram_resp),
@@ -319,7 +319,7 @@ class TestFeedbackFlow:
         resp = client.post("/webhook", json=_make_callback(f"up:{job_id}"))
         assert resp.status_code == 200
 
-        repo = JobRepository(db_path)
+        repo = SqliteJobRepository(db_path)
         job = repo.get_by_id(job_id)
         repo.close()
         assert job.feedback is not None
@@ -332,7 +332,7 @@ class TestFeedbackFlow:
         # Step 1: click 👎 — shows reason keyboard (no feedback saved yet)
         resp = client.post("/webhook", json=_make_callback(f"dn:{job_id}"))
         assert resp.status_code == 200
-        repo = JobRepository(db_path)
+        repo = SqliteJobRepository(db_path)
         job = repo.get_by_id(job_id)
         repo.close()
         assert job.feedback is None
@@ -340,7 +340,7 @@ class TestFeedbackFlow:
         # Step 2: pick "Demasiado senior"
         resp = client.post("/webhook", json=_make_callback(f"dr:{job_id}:sen"))
         assert resp.status_code == 200
-        repo = JobRepository(db_path)
+        repo = SqliteJobRepository(db_path)
         job = repo.get_by_id(job_id)
         repo.close()
         assert job.feedback is not None
@@ -355,7 +355,7 @@ class TestFeedbackFlow:
         client.post("/webhook", json=_make_callback(f"dn:{job_id}"))
         # Step 2: pick "Otro" — sends force_reply, no feedback yet
         client.post("/webhook", json=_make_callback(f"dr:{job_id}:oth"))
-        repo = JobRepository(db_path)
+        repo = SqliteJobRepository(db_path)
         job = repo.get_by_id(job_id)
         repo.close()
         assert job.feedback is None
@@ -367,7 +367,7 @@ class TestFeedbackFlow:
         )
         resp = client.post("/webhook", json=reply_payload)
         assert resp.status_code == 200
-        repo = JobRepository(db_path)
+        repo = SqliteJobRepository(db_path)
         job = repo.get_by_id(job_id)
         repo.close()
         assert job.feedback is not None
