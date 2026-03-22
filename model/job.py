@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -32,9 +33,11 @@ class Job:
     site: str
     is_remote: bool
     date_posted: str | None = None
+    salary_min: int | None = None
+    salary_max: int | None = None
     site_id: str | None = None
     id: int | None = None
-    status: str = "scraped"
+    status: Literal["unscored", "pending_triage", "below_threshold"] = "unscored"
     triage: TriageResult | None = None
     feedback: Feedback | None = None
     created_at: datetime = field(default_factory=datetime.now)
