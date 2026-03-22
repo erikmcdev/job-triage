@@ -5,5 +5,7 @@ seen_jobs.json
 pipeline.log
 resume-data/
 pending_jobs.json
+data/
+jobs.db
 test_output.*
 test_cv_local.py

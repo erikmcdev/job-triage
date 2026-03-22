@@ -11,8 +11,10 @@ services:
     env_file:
       - .env
     volumes:
+      - ./data:/app/data
       - ./resume-data:/app/resume-data
-      - ./jobs.db:/app/jobs.db
+    environment:
+      - DB_PATH=/app/data/jobs.db
 
   triage:
     build:
@@ -24,8 +26,10 @@ services:
     env_file:
       - .env
     volumes:
+      - ./data:/app/data
       - ./resume-data:/app/resume-data
-      - ./jobs.db:/app/jobs.db
+    environment:
+      - DB_PATH=/app/data/jobs.db
 
   nginx:
     image: nginx:alpine
