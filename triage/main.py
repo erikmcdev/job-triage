@@ -13,10 +13,11 @@ def main():
     print("🔍 Job Search Pipeline")
     print("=" * 50)
 
-    repo = JobRepository()
+    repo = None
     to_triage = []
 
     try:
+        repo = JobRepository()
         # 1. Scrape
         print("\n📡 Fetching jobs...")
         jobs = fetch_all_jobs()
@@ -62,7 +63,8 @@ def main():
         send_message(f"⚠️ Error en el pipeline, no se pudo completar el proceso:\n`{e}`")
 
     finally:
-        repo.close()
+        if repo:
+            repo.close()
 
 
 if __name__ == "__main__":
