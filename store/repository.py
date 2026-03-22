@@ -32,7 +32,7 @@ class SqliteJobRepository(JobRepository):
                 site TEXT NOT NULL,
                 is_remote BOOLEAN NOT NULL DEFAULT 0,
                 date_posted TEXT,
-                status TEXT NOT NULL DEFAULT 'scraped',
+                status TEXT NOT NULL DEFAULT 'unscored',
                 triage_score INTEGER,
                 triage_reason TEXT,
                 triage_missing_skills TEXT,

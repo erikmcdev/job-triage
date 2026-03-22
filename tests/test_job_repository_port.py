@@ -128,7 +128,7 @@ class TestJobRepositoryContract:
         assert found.company == "Acme Corp"
         assert found.job_url == "https://example.com/job/1"
         assert found.is_remote is True
-        assert found.status == "scraped"
+        assert found.status == "unscored"
 
     def test_get_by_id_returns_none_for_missing(self, repo):
         assert repo.get_by_id(99999) is None
@@ -165,8 +165,8 @@ class TestJobRepositoryContract:
     def test_get_by_status(self, repo):
         repo.save(_make_job(job_url="https://example.com/1"))
         repo.save(_make_job(job_url="https://example.com/2"))
-        scraped = repo.get_by_status("scraped")
-        assert len(scraped) == 2
+        unscored = repo.get_by_status("unscored")
+        assert len(unscored) == 2
 
     def test_get_by_status_empty(self, repo):
         assert repo.get_by_status("triaged") == []
