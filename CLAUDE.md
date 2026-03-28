@@ -88,15 +88,14 @@ Job statuses: `unscored` → `pending_triage` / `below_threshold` → `triaged_a
 
 ## Development
 
-```bash
-# Activate venv
-source .venv/bin/activate
+**Important:** Always prefix commands with `source .venv/bin/activate &&` to run in the venv.
 
+```bash
 # Run tests
-python -m pytest tests/ -v
+source .venv/bin/activate && python -m pytest tests/ -v
 
 # Run pipeline locally
-python main.py
+source .venv/bin/activate && python main.py
 
 # Run webhook locally
 uvicorn cv_adapter.api:app --host 0.0.0.0 --port 8000
