@@ -20,10 +20,10 @@ class NotifyService:
         jobs = self._job_repo.get_by_status("triaged_approved")
 
         if not jobs:
-            self._send_message("🔍 Hoy no hay ofertas nuevas que pasen el filtro.")
+            self.send_message("🔍 Hoy no hay ofertas nuevas que pasen el filtro.")
             return
 
-        self._send_message(f"🎯 *{len(jobs)} ofertas nuevas encontradas:*")
+        self.send_message(f"🎯 *{len(jobs)} ofertas nuevas encontradas:*")
 
         for job in jobs:
             try:
@@ -61,9 +61,9 @@ class NotifyService:
                 {"text": "📄 Generar CV", "callback_data": f"cv:{job.id}"},
             ]]
         }
-        self._send_message(msg, reply_markup=reply_markup)
+        self.send_message(msg, reply_markup=reply_markup)
 
-    def _send_message(self, text: str, **kwargs) -> None:
+    def send_message(self, text: str, **kwargs) -> None:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
