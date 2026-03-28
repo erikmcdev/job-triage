@@ -91,7 +91,6 @@ TRIAGE = TriageResult(
     missing_skills=["Kafka"],
     dealbreaker_gaps=[],
     company_industry="fintech",
-    keyword_score=5,
     salary_min=50000,
     salary_max=70000,
     salary_currency="EUR",
@@ -184,7 +183,6 @@ class TestJobRepositoryContract:
         assert updated.triage.missing_skills == ["Kafka"]
         assert updated.triage.dealbreaker_gaps == []
         assert updated.triage.company_industry == "fintech"
-        assert updated.triage.keyword_score == 5
         assert updated.triage.salary_min == 50000
         assert updated.triage.salary_max == 70000
         assert updated.triage.salary_currency == "EUR"

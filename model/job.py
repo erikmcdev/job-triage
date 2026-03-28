@@ -10,7 +10,6 @@ class TriageResult:
     missing_skills: list[str]
     dealbreaker_gaps: list[str]
     company_industry: str
-    keyword_score: int
     salary_min: int
     salary_max: int
     salary_currency: str

@@ -38,7 +38,6 @@ class SqliteJobRepository(JobRepository):
                 triage_missing_skills TEXT,
                 triage_dealbreaker_gaps TEXT,
                 triage_company_industry TEXT,
-                triage_keyword_score INTEGER,
                 triage_salary_min INTEGER,
                 triage_salary_max INTEGER,
                 triage_salary_currency TEXT,
@@ -65,7 +64,6 @@ class SqliteJobRepository(JobRepository):
                 missing_skills=json.loads(row["triage_missing_skills"] or "[]"),
                 dealbreaker_gaps=json.loads(row["triage_dealbreaker_gaps"] or "[]"),
                 company_industry=row["triage_company_industry"] or "",
-                keyword_score=row["triage_keyword_score"] or 0,
                 salary_min=row["triage_salary_min"] or 0,
                 salary_max=row["triage_salary_max"] or 0,
                 salary_currency=row["triage_salary_currency"] or "EUR",
@@ -155,7 +153,7 @@ class SqliteJobRepository(JobRepository):
             """UPDATE jobs SET
                 triage_score = ?, triage_reason = ?,
                 triage_missing_skills = ?, triage_dealbreaker_gaps = ?,
-                triage_company_industry = ?, triage_keyword_score = ?,
+                triage_company_industry = ?,
                 triage_salary_min = ?, triage_salary_max = ?,
                 triage_salary_currency = ?, status = 'triaged'
                WHERE id = ?""",
@@ -163,7 +161,7 @@ class SqliteJobRepository(JobRepository):
                 triage.score, triage.reason,
                 json.dumps(triage.missing_skills),
                 json.dumps(triage.dealbreaker_gaps),
-                triage.company_industry, triage.keyword_score,
+                triage.company_industry,
                 triage.salary_min, triage.salary_max,
                 triage.salary_currency, job_id,
             ),

@@ -35,7 +35,6 @@ MOCK_JOB = Job(
         missing_skills=[],
         dealbreaker_gaps=[],
         company_industry="SaaS",
-        keyword_score=12,
         salary_min=45000,
         salary_max=60000,
         salary_currency="EUR",

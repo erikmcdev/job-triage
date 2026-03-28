@@ -17,7 +17,6 @@ TRIAGE = TriageResult(
     missing_skills=["Kafka"],
     dealbreaker_gaps=[],
     company_industry="fintech",
-    keyword_score=5,
     salary_min=45000,
     salary_max=60000,
     salary_currency="EUR",
@@ -62,7 +61,7 @@ class TestStatusTransitions:
 
     def test_marks_notified_on_success(self, service, repo):
         _save_approved(repo)
-        with patch.object(service, "_send_message"):
+        with patch.object(service, "send_message"):
             service.run()
         job = list(repo._jobs.values())[0]
         assert job.status == "notified"
@@ -70,7 +69,7 @@ class TestStatusTransitions:
     def test_keeps_status_on_send_failure(self, service, repo):
         _save_approved(repo)
         # Header succeeds, job notification fails
-        with patch.object(service, "_send_message", side_effect=[None, Exception("Telegram down")]):
+        with patch.object(service, "send_message", side_effect=[None, Exception("Telegram down")]):
             service.run()
         job = list(repo._jobs.values())[0]
         assert job.status == "triaged_approved"
@@ -91,13 +90,13 @@ class TestStatusFiltering:
         ))
         repo.update_status(rejected.id, "triaged_rejected")
 
-        with patch.object(service, "_send_message") as mock_send:
+        with patch.object(service, "send_message") as mock_send:
             service.run()
         # header + 1 job notification = 2 calls (not 3)
         assert mock_send.call_count == 2
 
     def test_no_approved_jobs_sends_no_results_message(self, service, repo):
-        with patch.object(service, "_send_message") as mock_send:
+        with patch.object(service, "send_message") as mock_send:
             service.run()
         mock_send.assert_called_once()
         assert "no hay ofertas" in mock_send.call_args[0][0].lower()
@@ -112,7 +111,7 @@ class TestMessageContent:
     def test_job_message_contains_key_fields(self, service, repo):
         _save_approved(repo, title="Python Engineer", company="FinCo",
                        job_url="https://example.com/job/42")
-        with patch.object(service, "_send_message") as mock_send:
+        with patch.object(service, "send_message") as mock_send:
             service.run()
         # Second call is the job notification (first is header)
         job_msg = mock_send.call_args_list[1][0][0]
@@ -123,7 +122,7 @@ class TestMessageContent:
 
     def test_job_message_includes_inline_keyboard(self, service, repo):
         job = _save_approved(repo)
-        with patch.object(service, "_send_message") as mock_send:
+        with patch.object(service, "send_message") as mock_send:
             service.run()
         reply_markup = mock_send.call_args_list[1][1].get("reply_markup")
         assert reply_markup is not None
@@ -136,7 +135,7 @@ class TestMessageContent:
     def test_header_message_shows_count(self, service, repo):
         _save_approved(repo, job_url="https://example.com/1")
         _save_approved(repo, job_url="https://example.com/2")
-        with patch.object(service, "_send_message") as mock_send:
+        with patch.object(service, "send_message") as mock_send:
             service.run()
         header = mock_send.call_args_list[0][0][0]
         assert "2" in header
@@ -161,7 +160,7 @@ class TestBatch:
             if call_count == 3:
                 raise Exception("Telegram down")
 
-        with patch.object(service, "_send_message", side_effect=selective_fail):
+        with patch.object(service, "send_message", side_effect=selective_fail):
             service.run()
 
         statuses = {j.job_url: j.status for j in repo._jobs.values()}
@@ -171,7 +170,7 @@ class TestBatch:
     def test_all_successful_marks_all_notified(self, service, repo):
         _save_approved(repo, job_url="https://example.com/1")
         _save_approved(repo, job_url="https://example.com/2")
-        with patch.object(service, "_send_message"):
+        with patch.object(service, "send_message"):
             service.run()
         statuses = {j.status for j in repo._jobs.values()}
         assert statuses == {"notified"}
