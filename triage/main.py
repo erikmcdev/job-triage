@@ -1,70 +1,59 @@
 #!/usr/bin/env python3
-"""Job search pipeline: scrape → filter → triage → notify."""
+"""Job search pipeline: fetch → score → triage → notify."""
 
-from store import SqliteJobRepository
-from .scraper import fetch_all_jobs
-from .filters import apply_filters
-from .triage import triage_jobs
-from .notify import notify_jobs, send_message
-
-
+from triage.dependencies import (
+    fetch_service,
+    score_service,
+    triage_service,
+    notify_service,
+    repo,
+)
 def main():
     print("=" * 50)
     print("🔍 Job Search Pipeline")
     print("=" * 50)
 
-    repo = None
-    to_triage = []
-
     try:
-        repo = SqliteJobRepository()
-        # 1. Scrape
+        # 1. Fetch → dedup → hard filter → save as unscored
         print("\n📡 Fetching jobs...")
-        jobs = fetch_all_jobs()
+        fetched = fetch_service.run()
+        print(f"  {len(fetched)} jobs tras dedup + filtros")
 
-        # 2. Filter (dedup uses DB instead of seen_jobs.json)
-        print("\n🔧 Applying filters...")
-        filtered, keyword_scores = apply_filters(jobs, repo) if jobs else ([], {})
+        if not fetched:
+            print("No new jobs fetched.")
 
-        # 2.5 Recover jobs from previous failed triage
-        pending_retry = repo.get_by_status("scraped")
-        if pending_retry:
-            print(f"  📋 {len(pending_retry)} jobs pendientes de triaje anterior")
-            # Merge: filtered first, then pending (dedup by url)
-            seen_urls = {j.job_url for j in filtered}
-            for job in pending_retry:
-                if job.job_url not in seen_urls:
-                    filtered.append(job)
-                    seen_urls.add(job.job_url)
+        # 2. Score unscored → pending_triage / below_threshold
+        print("\n📊 Keyword scoring...")
+        score_service.run()
+        pending = repo.get_by_status("pending_triage")
+        below = repo.get_by_status("below_threshold")
+        print(f"  {len(pending)} pending triage, {len(below)} below threshold")
 
-        to_triage = filtered
-        if not to_triage:
-            print("No jobs to triage. Exiting.")
-            return
+        if not pending:
+            print("No jobs to triage.")
 
-        # 3. Save new jobs to DB (pending_retry already have ids)
-        print(f"\n💾 Saving {sum(1 for j in to_triage if j.id is None)} new jobs to DB...")
-        for job in to_triage:
-            if job.id is None:
-                repo.save(job)
+        # 3. Triage pending → triaged_approved / triaged_rejected
+        print(f"\n🤖 Claude triage ({len(pending)} jobs)...")
+        approved = triage_service.run()
+        print(f"  {len(approved)} approved")
 
-        # 4. Triage with Claude
-        print(f"\n🤖 Claude triage ({len(to_triage)} jobs)...")
-        good_jobs = triage_jobs(to_triage, keyword_scores, repo)
-
-        # 5. Notify
+        # 4. Notify triaged_approved → notified
         print("\n📱 Sending notifications...")
-        notify_jobs(good_jobs, repo)
+        notify_service.run()
 
-        print(f"\n✅ Done. {len(good_jobs)}/{len(to_triage)} jobs notified.")
+        print(f"\n✅ Done. {len(approved)} jobs notified.")
 
     except Exception as e:
         print(f"\n❌ Pipeline error: {e}")
-        send_message(f"⚠️ Error en el pipeline, no se pudo completar el proceso:\n`{e}`")
+        try:
+            notify_service.send_message(
+                f"⚠️ Error en el pipeline, no se pudo completar el proceso:\n`{e}`"
+            )
+        except Exception as notify_error:
+            print(f"  Failed to send error notification to Telegram: {notify_error}")
 
     finally:
-        if repo:
-            repo.close()
+        repo.close()
 
 
 if __name__ == "__main__":

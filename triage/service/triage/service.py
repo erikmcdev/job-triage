@@ -96,7 +96,6 @@ class TriageService:
                 missing_skills=evaluation.get("missing_skills", []),
                 dealbreaker_gaps=evaluation.get("dealbreaker_gaps", []),
                 company_industry=evaluation.get("company_industry", "Unknown"),
-                keyword_score=0,
                 salary_min=evaluation.get("expected_salary", {}).get("min", 0),
                 salary_max=evaluation.get("expected_salary", {}).get("max", 0),
                 salary_currency=evaluation.get("expected_salary", {}).get("currency", "EUR"),
