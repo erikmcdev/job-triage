@@ -16,9 +16,13 @@ Daily job scraping pipeline + Telegram bot with CV generation webhook.
 │       ├── fetch/
 │       │   ├── service.py   # FetchService: fetch → dedup → hard filter → save
 │       │   └── criteria.py  # SearchCriteria + HardFilters
-│       └── score/
-│           ├── service.py   # ScoreService: keyword score → pending_triage / below_threshold
-│           └── criteria.py  # ScoreCriteria (core/secondary/bonus stacks + threshold)
+│       ├── score/
+│       │   ├── service.py   # ScoreService: keyword score → pending_triage / below_threshold
+│       │   └── criteria.py  # ScoreCriteria (core/secondary/bonus stacks + threshold)
+│       ├── triage/
+│       │   └── service.py   # TriageService: Claude evaluation → triaged_approved / triaged_rejected
+│       └── notify/
+│           └── service.py   # NotifyService: Telegram notify → notified
 ├── cv_adapter/              # CV generation + feedback webhook (FastAPI)
 │   ├── api.py               # POST /webhook — handles all Telegram callbacks
 │   └── cv_generator.py      # Claude Sonnet + Jinja2 → WeasyPrint → PDF
@@ -35,8 +39,12 @@ Daily job scraping pipeline + Telegram bot with CV generation webhook.
 │   ├── service/
 │   │   ├── fetch/
 │   │   │   └── test_fetch_service.py   # FetchService: dedup, hard filters, status
-│   │   └── score/
-│   │       └── test_score_service.py   # ScoreService: keyword scoring, threshold, batch
+│   │   ├── score/
+│   │   │   └── test_score_service.py   # ScoreService: keyword scoring, threshold, batch
+│   │   ├── triage/
+│   │   │   └── test_triage_service.py  # TriageService: status transitions, persistence, batch
+│   │   └── notify/
+│   │       └── test_notify_service.py  # NotifyService: send, status, failure handling
 │   ├── test_job_repository_port.py     # Contract tests + InMemoryJobRepository
 │   ├── test_sqlite_adapter.py          # SQLite adapter runs contract suite
 │   ├── test_cv_adapter_flow.py         # Webhook + feedback integration tests
@@ -59,9 +67,10 @@ Pipeline is being decomposed into independent services, each with a `job_repo: J
 
 1. **FetchService** (`triage/service/fetch/`) — fetch → dedup → hard filter → save as `unscored`
 2. **ScoreService** (`triage/service/score/`) — load `unscored` → keyword score → update to `pending_triage` or `below_threshold`
-3. Triage + Notify — not yet migrated to services
+3. **TriageService** (`triage/service/triage/`) — load `pending_triage` → Claude evaluation → `triaged_approved` or `triaged_rejected`
+4. **NotifyService** (`triage/service/notify/`) — load `triaged_approved` → Telegram notify → `notified` (keeps status on failure)
 
-Job statuses: `unscored` → `pending_triage` / `below_threshold` → `triaged` → `notified`
+Job statuses: `unscored` → `pending_triage` / `below_threshold` → `triaged_approved` / `triaged_rejected` → `notified`
 
 ## Runtime data
 
