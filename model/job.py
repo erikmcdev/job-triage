@@ -37,7 +37,7 @@ class Job:
     salary_max: int | None = None
     site_id: str | None = None
     id: int | None = None
-    status: Literal["unscored", "pending_triage", "below_threshold", "triaged_approved", "triaged_rejected"] = "unscored"
+    status: Literal["unscored", "pending_triage", "below_threshold", "triaged_approved", "triaged_rejected", "notified", "applied"] = "unscored"
     triage: TriageResult | None = None
     feedback: Feedback | None = None
     created_at: datetime = field(default_factory=datetime.now)
